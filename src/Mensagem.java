@@ -1,5 +1,5 @@
 
-public class Mensagem implements iMensagem{
+public class Mensagem{
 	private int id, tipo, angulo, raio, distancia = 0;
 	private long idCliente = 0;
 	private String texto = "";

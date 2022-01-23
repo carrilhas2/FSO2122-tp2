@@ -12,7 +12,7 @@ import javax.swing.JTextArea;
 import javax.swing.JRadioButton;
 import javax.swing.ButtonGroup;
 
-public class DesenhaQuadrados extends JFrame {
+public class DesenhaQuadrados extends JFrame implements Runnable {
 
 	/**
 	 * 
@@ -32,33 +32,26 @@ public class DesenhaQuadrados extends JFrame {
 	private VariaveisDesenharQuadrados v;
 	private CanalComunicacao canal;
 
-	/**
-	 * Launch the application.
-	 */
-	public static void main(String[] args) {
-		EventQueue.invokeLater(new Runnable() {
-			public void run() {
-				try {
-					DesenhaQuadrados frame = new DesenhaQuadrados();
-					frame.setVisible(true);
-				} catch (Exception e) {
-					e.printStackTrace();
-				}
-			}
-		});
+	
+	@Override
+	public void run() {
+
 	}
 	
 	private void inicializarVariaveis() {
 		v = new VariaveisDesenharQuadrados();
-		canal = new CanalComunicacao(); 
-		canal.abrirCanal("../teste.txt");
 	}
 
 	/**
 	 * Create the frame.
 	 */
-	public DesenhaQuadrados() {
+	public DesenhaQuadrados(CanalComunicacao canal) {
 		inicializarVariaveis();
+		inicializarGui();
+		this.canal = canal;
+	}
+
+	private void inicializarGui() {
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		setBounds(100, 100, (int) (450*zoom), (int) (300*zoom));
 		contentPane = new JPanel();

@@ -1,6 +1,8 @@
 import java.awt.EventQueue;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.ArrayList;
+import java.util.List;
 
 import javax.swing.ButtonGroup;
 import javax.swing.JButton;
@@ -12,7 +14,7 @@ import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.border.EmptyBorder;
 
-public class DesenhaCirculos extends JFrame {
+public class DesenhaCirculos extends JFrame implements Runnable{
 
 	/**
 	 * 
@@ -30,35 +32,49 @@ public class DesenhaCirculos extends JFrame {
 	private JButton btnDesenharCirculo;
 	private int numeroInstrucao = 1;
 	private VariaveisDesenharCirculos v;
-	private static CanalComunicacao canal;
-
-	/**
-	 * Launch the application.
-	 */
-	public static void main(String[] args) {
-		EventQueue.invokeLater(new Runnable() {
-			public void run() {
-				try {
-					DesenhaCirculos frame = new DesenhaCirculos();
-					frame.setVisible(true);
-				} catch (Exception e) {
-					e.printStackTrace();
-				}
-			}
-		});
-	}
+	private CanalComunicacao canal;
+	private String estado;
+	private boolean running;
+	private List<Mensagem> listaMensagens;
 	
-	private void inicializarVariaveis() {
-		v = new VariaveisDesenharCirculos();
-		canal = new CanalComunicacao();
-		canal.abrirCanal("../teste.txt");
-	}
-
 	/**
 	 * Create the frame.
 	 */
-	public DesenhaCirculos() {
+	public DesenhaCirculos(CanalComunicacao canal) {
 		inicializarVariaveis();
+		inicializarGui();
+		this.canal = canal;
+	}
+	
+	@Override
+	public void run() {
+		while(running) {
+			switch(estado) {
+				case "dormir":
+					if(listaMensagens.isEmpty()) {
+						try {
+							Thread.sleep(2000L);
+						} catch (InterruptedException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}
+					} else {
+						estado = "escrever";
+					}
+					break;
+				case "escrever":
+					break;
+				
+			}
+		}
+	}
+	
+	private void inicializarVariaveis() {
+		listaMensagens = new ArrayList<Mensagem>();
+		v = new VariaveisDesenharCirculos();
+	}
+
+	private void inicializarGui() {
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		setBounds(100, 100, (int) (450*zoom), (int) (300*zoom));
 		contentPane = new JPanel();
@@ -143,14 +159,15 @@ public class DesenhaCirculos extends JFrame {
 	}
 	
 	private void desenharCirculos(int nCirculos, String raio) {
+		listaMensagens.add(new Mensagem(EnumEstados.INICIAR_SEQUENCIA.getEstado(), IDCliente)); 
 		for (int i = 0; i < nCirculos; i++) {
-			canal.getAndSet(new Mensagem(EnumEstados.INICIAR_SEQUENCIA.getEstado(), IDCliente)); 
 			if(buttonGroup.getSelection().getActionCommand() == "direita") {
-				canal.getAndSet(new Mensagem(EnumEstados.CURVA_DIREITA.getEstado(), Integer.valueOf(raio), 350, IDCliente));
+				listaMensagens.add(new Mensagem(EnumEstados.CURVA_DIREITA.getEstado(), Integer.valueOf(raio), 350, IDCliente));
 			} else {
-				canal.getAndSet(new Mensagem(EnumEstados.CURVA_ESQUERDA.getEstado(), Integer.valueOf(raio), 350, IDCliente));
+				listaMensagens.add(new Mensagem(EnumEstados.CURVA_ESQUERDA.getEstado(), Integer.valueOf(raio), 350, IDCliente));
 			}			
-			canal.getAndSet(new Mensagem(EnumEstados.TERMINAR_SEQUENCIA.getEstado(), IDCliente));
 		}
+		listaMensagens.add(new Mensagem(EnumEstados.TERMINAR_SEQUENCIA.getEstado(), IDCliente));
+
 	}
 }
