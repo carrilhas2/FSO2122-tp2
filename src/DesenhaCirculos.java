@@ -1,6 +1,8 @@
 import java.awt.EventQueue;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -8,6 +10,7 @@ import javax.swing.ButtonGroup;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JRadioButton;
 import javax.swing.JTextArea;
@@ -55,7 +58,6 @@ public class DesenhaCirculos extends JFrame implements Runnable{
 						try {
 							Thread.sleep(2000L);
 						} catch (InterruptedException e) {
-							// TODO Auto-generated catch block
 							e.printStackTrace();
 						}
 					} else {
@@ -63,12 +65,18 @@ public class DesenhaCirculos extends JFrame implements Runnable{
 					}
 					break;
 				case "escrever":
+					enviarComandos();
+					estado = "dormir";
 					break;
 				
 			}
 		}
 	}
 	
+	private void enviarComandos() {
+		listaMensagens.stream().forEach(msg -> canal.getAndSet(msg));
+	}
+
 	private void inicializarVariaveis() {
 		listaMensagens = new ArrayList<Mensagem>();
 		v = new VariaveisDesenharCirculos();
@@ -81,6 +89,20 @@ public class DesenhaCirculos extends JFrame implements Runnable{
 		contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
 		setContentPane(contentPane);
 		contentPane.setLayout(null);
+    	DesenhaCirculos frame = this;
+
+		
+		frame.addWindowListener(new WindowAdapter() {
+		    @Override
+		    public void windowClosing(WindowEvent windowEvent) {
+		        if (JOptionPane.showConfirmDialog(frame, 
+		            "Are you sure you want to close this window?", "Close Window?", 
+		            JOptionPane.YES_NO_OPTION,
+		            JOptionPane.QUESTION_MESSAGE) == JOptionPane.YES_OPTION){
+		            System.exit(0);
+		        }
+		    }
+		});
 		
 		btnDesenharCirculo = new JButton("Desenhar Circulo");
 		btnDesenharCirculo.addActionListener(new ActionListener() {

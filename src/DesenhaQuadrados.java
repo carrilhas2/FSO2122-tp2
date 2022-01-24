@@ -1,12 +1,17 @@
 import java.awt.EventQueue;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
+import java.util.ArrayList;
+import java.util.List;
 
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.border.EmptyBorder;
 import javax.swing.JButton;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JTextField;
 import javax.swing.JTextArea;
 import javax.swing.JRadioButton;
@@ -31,15 +36,44 @@ public class DesenhaQuadrados extends JFrame implements Runnable {
 	private int numeroInstrucao = 1;
 	private VariaveisDesenharQuadrados v;
 	private CanalComunicacao canal;
+	private List<Mensagem> listaMensagens;
+	private String estado;
+	private boolean running;
 
 	
 	@Override
 	public void run() {
-
+		while(running) {
+			switch(estado) {
+				case "dormir":
+					if(listaMensagens.isEmpty()) {
+						try {
+							Thread.sleep(2000L);
+						} catch (InterruptedException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}
+					} else {
+						estado = "escrever";
+					}
+					break;
+				case "escrever":
+					enviarComandos();
+					estado = "dormir";
+					break;
+				
+			}
+		}
+	}
+	
+	
+	private void enviarComandos() {
+		listaMensagens.stream().forEach(msg -> canal.getAndSet(msg));
 	}
 	
 	private void inicializarVariaveis() {
 		v = new VariaveisDesenharQuadrados();
+		listaMensagens = new ArrayList<Mensagem>();
 	}
 
 	/**
@@ -58,6 +92,20 @@ public class DesenhaQuadrados extends JFrame implements Runnable {
 		contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
 		setContentPane(contentPane);
 		contentPane.setLayout(null);
+		
+		DesenhaQuadrados frame = this;
+
+		frame.addWindowListener(new WindowAdapter() {
+		    @Override
+		    public void windowClosing(WindowEvent windowEvent) {
+		        if (JOptionPane.showConfirmDialog(frame, 
+		            "Are you sure you want to close this window?", "Close Window?", 
+		            JOptionPane.YES_NO_OPTION,
+		            JOptionPane.QUESTION_MESSAGE) == JOptionPane.YES_OPTION){
+		            System.exit(0);
+		        }
+		    }
+		});
 		
 		btnDesenharQuadrado = new JButton("Desenhar Quadrado");
 		btnDesenharQuadrado.addActionListener(new ActionListener() {
@@ -138,19 +186,22 @@ public class DesenhaQuadrados extends JFrame implements Runnable {
 	private void desenharQuadrados(int nQuadrados, String distancia) {
 		
 		EnumEstados estado = (buttonGroup.getSelection().getActionCommand() == "direita")? EnumEstados.CURVA_DIREITA:EnumEstados.CURVA_ESQUERDA;
-		for(int i = 0; i < nQuadrados; i++) {
-			canal.getAndSet(new Mensagem(EnumEstados.INICIAR_SEQUENCIA.getEstado(), IDCliente));
-			canal.getAndSet(new Mensagem(EnumEstados.FRENTE.getEstado(), Integer.valueOf(distancia), IDCliente));
-			canal.getAndSet(new Mensagem(estado.getEstado(), 0, 84, IDCliente));
-			canal.getAndSet(new Mensagem(EnumEstados.FRENTE.getEstado(), Integer.valueOf(distancia), IDCliente));
-			canal.getAndSet(new Mensagem(estado.getEstado(), 0, 84, IDCliente));
-			canal.getAndSet(new Mensagem(EnumEstados.FRENTE.getEstado(), Integer.valueOf(distancia), IDCliente));
-			canal.getAndSet(new Mensagem(estado.getEstado(), 0, 84, IDCliente));
-			canal.getAndSet(new Mensagem(EnumEstados.FRENTE.getEstado(), Integer.valueOf(distancia), IDCliente));
-			canal.getAndSet(new Mensagem(estado.getEstado(), 0, 84, IDCliente));
-			canal.getAndSet(new Mensagem(EnumEstados.TERMINAR_SEQUENCIA.getEstado(), IDCliente));
+		
+		listaMensagens.add(new Mensagem(EnumEstados.INICIAR_SEQUENCIA.getEstado(), IDCliente));
 
+		for(int i = 0; i < nQuadrados; i++) {
+			listaMensagens.add(new Mensagem(EnumEstados.FRENTE.getEstado(), Integer.valueOf(distancia), IDCliente));
+			listaMensagens.add(new Mensagem(estado.getEstado(), 0, 84, IDCliente));
+			listaMensagens.add(new Mensagem(EnumEstados.FRENTE.getEstado(), Integer.valueOf(distancia), IDCliente));
+			listaMensagens.add(new Mensagem(estado.getEstado(), 0, 84, IDCliente));
+			listaMensagens.add(new Mensagem(EnumEstados.FRENTE.getEstado(), Integer.valueOf(distancia), IDCliente));
+			listaMensagens.add(new Mensagem(estado.getEstado(), 0, 84, IDCliente));
+			listaMensagens.add(new Mensagem(EnumEstados.FRENTE.getEstado(), Integer.valueOf(distancia), IDCliente));
+			listaMensagens.add(new Mensagem(estado.getEstado(), 0, 84, IDCliente));
 		}
+		
+		listaMensagens.add(new Mensagem(EnumEstados.TERMINAR_SEQUENCIA.getEstado(), IDCliente));
+
 		
 	}
 }
