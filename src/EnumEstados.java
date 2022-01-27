@@ -8,7 +8,8 @@ public enum EnumEstados {
 	CURVA_DIREITA(5),
 	PARAR(6),
 	INICIAR_SEQUENCIA(7), 
-	TERMINAR_SEQUENCIA(8);
+	TERMINAR_SEQUENCIA(8), 
+	REPRODUZIR_SEQUENCIA(9);
 
 	
 	private final int estado;

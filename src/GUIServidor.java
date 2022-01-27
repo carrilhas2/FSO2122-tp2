@@ -22,7 +22,10 @@ public class GUIServidor extends JFrame{
 	private static final long serialVersionUID = 6753842018479579961L;
 	private static final long IDServidor = System.currentTimeMillis();
 	private static boolean ativo;
+	private static boolean aGravar = false;
 	private static EnumEstados estado = EnumEstados.LER_MENSAGEM;
+	private static EnumEstados estadoAnterior = null;
+
 	private JPanel guiContentPane;
 	private JTextField textFldNome;
 	private JTextField textFldRaio;
@@ -45,6 +48,8 @@ public class GUIServidor extends JFrame{
 	private int velocidadeRobot = 30;
 	private ScheduledExecutorService oneThreadScheduleExecutor;
 	private String idCliente = "";
+	private GravarFormas gravarFormas;
+	private JButton btnGravarFormas;
 	
 
 	/**
@@ -90,12 +95,14 @@ public class GUIServidor extends JFrame{
 					break;
 				}
 				else {
+					estadoAnterior = estado;
 					estado = EnumEstados.getEstadoPorTipo(msgLida.getTipo());
 				}
 				break;
 				
 			case ESPERAR_MENSAGEM:
 				System.out.println("ESPERAR_MENSAGEM");
+				estadoAnterior = estado;
 				estado = EnumEstados.LER_MENSAGEM;
 				oneThreadScheduleExecutor.schedule(()->{gerirRobot();}, 2L, TimeUnit.SECONDS);
 				ativo = false;
@@ -104,6 +111,7 @@ public class GUIServidor extends JFrame{
 			case INICIAR_SEQUENCIA:
 				System.out.println("INICIAR_SEQUENCIA");
 				queueMap.put(String.valueOf(msgLida.getIdCliente()), new ArrayList<Mensagem>());
+				estadoAnterior = estado;
 				estado = EnumEstados.LER_MENSAGEM;
 				break;
 				
@@ -117,10 +125,19 @@ public class GUIServidor extends JFrame{
 					if(queueMap.get(idCliente).isEmpty()) {
 						queueMap.remove(idCliente);
 					}
+					estadoAnterior = estado;
 					estado = EnumEstados.getEstadoPorTipo(msgLida.getTipo());
 				}else {
+					estadoAnterior = estado;
 					estado = EnumEstados.LER_MENSAGEM;
 				}
+				
+				break;
+				
+				//TODO: fazer o reproduzir
+			case REPRODUZIR_SEQUENCIA:
+				System.out.println("REPRODUZIR_SEQUENCIA");
+				
 				
 				break;
 				
@@ -132,7 +149,8 @@ public class GUIServidor extends JFrame{
 				distancia = (int) (Math.toRadians(angulo)  * raio);
 				robot.curvarDireita(raio, (int)angulo);
 				tempoDeExecucao = (distancia / velocidadeRobot);
-				estado = EnumEstados.TERMINAR_SEQUENCIA;
+				estadoAnterior = estado;
+				estado = estadoAnterior.equals(EnumEstados.TERMINAR_SEQUENCIA) ? EnumEstados.TERMINAR_SEQUENCIA : EnumEstados.REPRODUZIR_SEQUENCIA;
 				oneThreadScheduleExecutor.schedule(()->{gerirRobot();}, tempoDeExecucao, TimeUnit.SECONDS);
 				ativo = false;
 				break;
@@ -145,7 +163,8 @@ public class GUIServidor extends JFrame{
 				distancia = (int) (Math.toRadians(angulo)  * raio);
 				robot.curvarEsquerda(raio, (int)angulo);
 				tempoDeExecucao = (distancia / velocidadeRobot);
-				estado = EnumEstados.TERMINAR_SEQUENCIA;
+				estadoAnterior = estado;
+				estado = estadoAnterior.equals(EnumEstados.TERMINAR_SEQUENCIA) ? EnumEstados.TERMINAR_SEQUENCIA : EnumEstados.REPRODUZIR_SEQUENCIA;
 				oneThreadScheduleExecutor.schedule(()->{gerirRobot();}, tempoDeExecucao, TimeUnit.SECONDS);
 				ativo = false;
 				break;
@@ -155,7 +174,8 @@ public class GUIServidor extends JFrame{
 				distancia = msgLida.getDistancia();
 				robot.reta(distancia);
 				tempoDeExecucao = (distancia / velocidadeRobot);
-				estado = EnumEstados.TERMINAR_SEQUENCIA;
+				estadoAnterior = estado;
+				estado = estadoAnterior.equals(EnumEstados.TERMINAR_SEQUENCIA) ? EnumEstados.TERMINAR_SEQUENCIA : EnumEstados.REPRODUZIR_SEQUENCIA;
 				oneThreadScheduleExecutor.schedule(()->{gerirRobot();}, tempoDeExecucao*2, TimeUnit.SECONDS);
 				ativo = false;
 				break;
@@ -163,7 +183,8 @@ public class GUIServidor extends JFrame{
 			case PARAR:
 				System.out.println("PARAR");
 				robot.parar();
-				estado = EnumEstados.TERMINAR_SEQUENCIA;
+				estadoAnterior = estado;
+				estado = estadoAnterior.equals(EnumEstados.TERMINAR_SEQUENCIA) ? EnumEstados.TERMINAR_SEQUENCIA : EnumEstados.REPRODUZIR_SEQUENCIA;
 				break;
 
 			case TRAS:
@@ -171,7 +192,8 @@ public class GUIServidor extends JFrame{
 				distancia = msgLida.getDistancia();
 				robot.reta(-distancia); 
 				tempoDeExecucao = (distancia / velocidadeRobot);
-				estado = EnumEstados.TERMINAR_SEQUENCIA;
+				estadoAnterior = estado;
+				estado = estadoAnterior.equals(EnumEstados.TERMINAR_SEQUENCIA) ? EnumEstados.TERMINAR_SEQUENCIA : EnumEstados.REPRODUZIR_SEQUENCIA;
 				oneThreadScheduleExecutor.schedule(()->{gerirRobot();}, tempoDeExecucao, TimeUnit.SECONDS);
 				ativo = false;
 				break;
@@ -293,7 +315,7 @@ public class GUIServidor extends JFrame{
 				}
 			}
 		});
-		btnAbrir.setBounds(777, 23, (int) (117*zoom), (int) (29*zoom));
+		btnAbrir.setBounds(706, 23, 188, 40);
 		guiContentPane.add(btnAbrir);
 		
 		btnFrente = new JButton("Frente");
@@ -312,7 +334,7 @@ public class GUIServidor extends JFrame{
 				}
 			}}
 		});
-		btnFrente.setBounds(534, 80, (int) (148*zoom), (int) (45*zoom));
+		btnFrente.setBounds(387, 23, (int) (148*zoom), (int) (45*zoom));
 		guiContentPane.add(btnFrente);
 		
 		btnParar = new JButton("Parar");
@@ -324,7 +346,7 @@ public class GUIServidor extends JFrame{
 					robot.parar();
 			}}
 		});
-		btnParar.setBounds(534, 133, (int) (148*zoom), (int) (45*zoom));
+		btnParar.setBounds(387, 76, (int) (148*zoom), (int) (45*zoom));
 		guiContentPane.add(btnParar);
 		
 		btnTras = new JButton("Tras");
@@ -344,7 +366,7 @@ public class GUIServidor extends JFrame{
 				}
 			}
 		});
-		btnTras.setBounds(534, 179, (int) (148*zoom), (int) (40*zoom));
+		btnTras.setBounds(387, 122, (int) (148*zoom), (int) (40*zoom));
 		guiContentPane.add(btnTras);
 		
 		btnEsquerda = new JButton("Esquerda");
@@ -366,7 +388,7 @@ public class GUIServidor extends JFrame{
 				}
 			}
 		});
-		btnEsquerda.setBounds(375, 133, (int) (147*zoom), (int) (45*zoom));
+		btnEsquerda.setBounds(228, 76, (int) (147*zoom), (int) (45*zoom));
 		guiContentPane.add(btnEsquerda);
 		
 		btnDireita = new JButton("Direita");
@@ -388,12 +410,52 @@ public class GUIServidor extends JFrame{
 				}
 			}
 		});
-		btnDireita.setBounds(694, 133, (int) (148*zoom), (int) (45*zoom));
+		btnDireita.setBounds(547, 76, (int) (148*zoom), (int) (45*zoom));
 		guiContentPane.add(btnDireita);
 		
 		textAreaConsola = new JTextArea();
 		textAreaConsola.setBounds(6, 244, (int) (888*zoom), (int) (328*zoom));
 		guiContentPane.add(textAreaConsola);
+		
+		JButton btnDesenhaCirculos = new JButton("Desenha Circulos");
+		btnDesenhaCirculos.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				if(abrir) {
+					DesenhaCirculos desenhaCirculos = new DesenhaCirculos(canal);
+					Thread thread = new Thread(desenhaCirculos);
+					thread.start();
+				}
+				
+			}
+		});
+		btnDesenhaCirculos.setBounds(706, 75, 188, 40);
+		guiContentPane.add(btnDesenhaCirculos);
+		
+		JButton btnDesenhaQuadrados = new JButton("Desenha Quadrados");
+		btnDesenhaQuadrados.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				if(abrir) {
+					DesenhaQuadrados desenhaQuadrados = new DesenhaQuadrados(canal);
+					Thread thread = new Thread(desenhaQuadrados);
+					thread.start();
+				}
+			}
+		});
+		btnDesenhaQuadrados.setBounds(706, 128, 188, 40);
+		guiContentPane.add(btnDesenhaQuadrados);
+		
+		btnGravarFormas = new JButton("Gravar Formas");
+		btnGravarFormas.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				if(abrir) {
+					gravarFormas = new GravarFormas();
+					Thread thread = new Thread(gravarFormas);
+					thread.start();
+				}
+			}
+		});
+		btnGravarFormas.setBounds(706, 180, 188, 40);
+		guiContentPane.add(btnGravarFormas);
 		
 	}
 	
@@ -405,5 +467,4 @@ public class GUIServidor extends JFrame{
 	public static CanalComunicacao getCanal() {
 		return canal;
 	}
-
 }
